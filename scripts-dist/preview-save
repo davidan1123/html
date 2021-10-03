@@ -1,0 +1,9 @@
+#!/bin/bash
+
+PREVIEW_JPEG=$1
+MEDIA_DIR=$2
+FIFO=$3
+LOG_FILE=$4
+THUMB_JPEG=$5
+
+MY_EMAIL=myuser@gmail.com

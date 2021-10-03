@@ -1,0 +1,51 @@
+#!/bin/bash
+
+preview_jpeg=$1
+log_file=$2
+thumb_pathname=$3
+thumb_size=$4
+w_motion=$5
+h_motion=$6
+xc=$7
+yc=$8
+
+w_thumb=$(echo $thumb_size | cut -d "x" -f 1)
+h_thumb=$(echo $thumb_size | cut -d "x" -f 2)
+
+if ((w_thumb <=10 || h_thumb <= 10))
+then
+	w_thumb=150
+	h_thumb=150
+fi
+
+if ((w_motion * h_thumb / w_thumb < h_motion))
+then
+	w_motion=$((h_motion * w_thumb / h_thumb))
+else
+	h_motion=$((w_motion * h_thumb / w_thumb))
+fi
+
+x0=$((xc - w_motion / 2))
+y0=$((yc - h_motion / 2))
+
+if ((x0 < 0))
+then
+	x0=0
+fi
+if ((y0 < 0))
+then
+	y0=0
+fi
+
+if ((w_motion > 0))
+then
+	echo "  convert $preview_jpeg -crop ${w_motion}x${h_motion}+${x0}+${y0} \
+			-resize ${thumb_size}\! $thumb_pathname" >> $log_file
+	convert $preview_jpeg -crop ${w_motion}x${h_motion}+${x0}+${y0} \
+			-resize ${thumb_size}\! $thumb_pathname
+else
+	echo "  convert $preview_jpeg -resize ${thumb_size}\! $thumb_pathname" >> $log_file
+	convert $preview_jpeg -resize ${thumb_size}\! $thumb_pathname
+fi
+
+exit 0

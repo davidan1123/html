@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+# tab-width: 4
+
+import sys
+import socket
+import time
+
+PKC_MULTICAST_GROUP = '225.0.0.55'
+PKC_MULTICAST_PORT  = 22555
+
+send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+
+repeat = 4
+delay = .05
+
+def usage():
+	print "usage: pkc-motion {host|host-list|all} <on|off>"
+	print "    Multicast a motion_enable command to davs on a LAN."
+	print "    If host, host-list or all is not specified, all is assumed."
+	print "    host-list is a comma separated list of hosts."
+	print "    on or off must be given."
+	sys.exit()
+
+argc = len(sys.argv)
+if argc == 1:
+	usage()
+if argc == 2:
+	hosts = "all"
+	onoff = sys.argv[1]
+if argc == 3:
+	hosts = sys.argv[1]
+	onoff = sys.argv[2]
+if onoff == "on":
+	msg_id = 1
+elif onoff == "off":
+	msg_id = 2
+else:
+	print 'Bad arg: ' + onoff
+	usage()
+
+hostname = socket.gethostname()
+
+for x in range(1, repeat + 1):
+	msg = "%s:%d %s command @motion_enable %s" % (hostname, msg_id, hosts, onoff)
+#	print msg
+	send_socket.sendto(msg, (PKC_MULTICAST_GROUP, PKC_MULTICAST_PORT))
+	time.sleep(delay)
+

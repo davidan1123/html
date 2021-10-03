@@ -1,0 +1,44 @@
+#!/bin/bash
+
+
+VIDEO_FILE=$1
+FIFO=$2
+LOG_FILE=$3
+
+if [ "$LOG_FILE" == "" ]
+then
+	LOG_FILE = /dev/null
+fi
+
+machine1=(user machine1.com password 22 /home/pi/motion_videos)
+rpi2=(pi rpi2 raspberry 20002 /home/pi/videos)
+
+
+scp_video()
+	{
+	dest=($@)
+	video=${dest[0]}
+	user=${dest[1]}
+	host=${dest[2]}
+	password=${dest[3]}
+	port=${dest[4]}
+	dir=${dest[5]}
+
+	echo $video copy to $host
+
+	# Do the scp if the port is open.
+	if nc -zv -w 3 $host $port 2> /dev/null
+	then
+		echo "  sshpass -p $password scp -P $port $video $user@$host:$dir" >> $LOG_FILE
+		sshpass -p $password scp -P $port $video $user@$host:$dir 2>> $LOG_FILE
+	else
+		echo "  Cannot connect to $host:$port.  scp of $video failed." >> $LOG_FILE
+	fi
+	}
+
+scp_video $VIDEO_FILE ${machine1[@]}
+scp_video $VIDEO_FILE ${rpi2[@]}
+
+# A delete of the video could be here.  Or write a scheduled videos
+# directory cleanup and run it from the at-command list.  Or manage
+# it by hand.

@@ -1,0 +1,51 @@
+#!/bin/bash
+
+MEDIA_DIR=$1
+VIDEOFILE_MP4=$2
+SERIES=$3
+LOG_FILE=$4
+COMMAND_FIFO=$5
+FILENAME_FORMAT=$6
+
+BUSTER=10
+V=`cat /etc/debian_version`
+DEB_VERSION="${V%.*}"
+
+if ((DEB_VERSION >= BUSTER))
+then
+	AV_PGM=ffmpeg
+else
+	AV_PGM=avconv
+fi
+
+#
+# Requires libav-tools
+#
+
+DATE=`date +"%F %T"`
+echo "  $DATE timelapse-convert: converting $FILENAME_FORMAT to $VIDEOFILE_MP4" >> $LOG_FILE
+
+echo "tl_inform_convert start $SERIES" > $COMMAND_FIFO
+
+cd $MEDIA_DIR/timelapse
+
+FIRST=$(ls tl_${SERIES}_*.jpg | head -n1)
+NUM=${FIRST:9:5}
+
+nice -2 $AV_PGM -r 6 -start_number $NUM -i $FILENAME_FORMAT \
+		-b:v 6M -maxrate 6M -minrate 1M -bufsize 4M \
+		-vcodec libx264 -crf 20 -g 4 -movflags faststart \
+		$SERIES.mp4
+
+mv $SERIES.mp4 $VIDEOFILE_MP4
+
+BASE=`basename $VIDEOFILE_MP4`
+THUMB_JPEG=${BASE%.mp4}.th.jpg
+convert -resize 150 tl_${SERIES}_${NUM}.jpg $MEDIA_DIR/thumbs/$THUMB_JPEG 
+
+echo "tl_inform_convert done $SERIES" > $COMMAND_FIFO
+
+rm tl_${SERIES}_*.jpg
+
+DATE=`date +"%F %T"`
+echo "  $DATE timelapse-convert: $VIDEOFILE_MP4 done" >> $LOG_FILE
